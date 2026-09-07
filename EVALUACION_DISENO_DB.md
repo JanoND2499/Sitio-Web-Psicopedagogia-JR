@@ -16,7 +16,7 @@ El dominio seleccionado corresponde a **En-Joy Psicopedagogía**, un sistema de 
 A continuación, se representa el esquema del modelo de datos para una base de datos NoSQL orientada a documentos (MongoDB) utilizando la notación de diagrama Entidad-Relación (ER):
 
 ### Imagen del Diagrama del Modelo
-![Diagrama del modelo de datos](images/diagrama_modelo.png)
+![Diagrama del modelo de datos](images/Md/diagrama_modelo.png)
 
 ### Código del Diagrama (Mermaid)
 ```mermaid
