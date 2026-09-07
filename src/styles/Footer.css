@@ -1,0 +1,131 @@
+.footer-container {
+  background-color: var(--secondary);
+  border-top: 5px solid var(--secondary-hover);
+  padding: 40px 20px;
+  margin-top: auto;
+  font-family: var(--font-heading);
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 40px;
+}
+
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+  min-width: 250px;
+}
+
+.footer-column h4 {
+  font-size: 18px;
+  color: var(--accent);
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* IZQUIERDA (MAPA) */
+.inst-ubicacion iframe {
+  width: 100%;
+  max-width: 300px;
+  height: 140px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-light);
+  transition: var(--transition-smooth);
+}
+
+.inst-ubicacion iframe:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-medium);
+}
+
+/* CENTRO (LOGO + COPY) */
+.derechos {
+  gap: 10px;
+}
+
+.footer-logo {
+  width: 180px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-light);
+  transition: var(--transition-smooth);
+}
+
+.footer-logo:hover {
+  transform: scale(1.03);
+}
+
+.copyright-text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+  text-align: center;
+}
+
+.designer-link {
+  font-weight: bold;
+  color: var(--text-light);
+  border-bottom: 1.5px dashed var(--text-light);
+  padding-bottom: 2px;
+}
+
+.designer-link:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* DERECHA (REDES) */
+.contact-list {
+  display: flex;
+  gap: 15px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.social-icon {
+  width: 48px;
+  height: 48px;
+  background-color: var(--text-light);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow:
+    4px 4px 0px 0px rgba(251, 104, 132, 1),
+    8px 8px 0px 0px rgba(255, 145, 76, 1),
+    12px 12px 0px 0px rgba(29, 53, 87, 0.4);
+}
+
+/* HOVER ANIMACIÓN */
+.social-icon:hover {
+  transform: translateY(-5px) scale(1.1);
+  box-shadow:
+    2px 2px 0px 0px rgba(251, 104, 132, 1),
+    4px 4px 0px 0px rgba(255, 145, 76, 1),
+    6px 6px 0px 0px rgba(29, 53, 87, 0.4);
+}
+
+.social-icon:active {
+  transform: scale(0.95);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 30px;
+  }
+}

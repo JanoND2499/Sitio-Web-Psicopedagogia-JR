@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=DynaPuff:wght@400..700&family=Spline+Sans:wght@300..700&display=swap');
+
+:root {
+  /* Colors */
+  --primary: #fb6884;
+  --primary-hover: #e54c69;
+  --secondary: #ff914c;
+  --secondary-hover: #e76f51;
+  --accent: #1d3557;
+  --accent-hover: #0d1e36;
+  --text-dark: #2c3e50;
+  --text-light: #ffffff;
+  --bg-gradient-pink: linear-gradient(135deg, #e643a2, #efaac2);
+  --bg-gradient-orange: linear-gradient(to top, #f4a95e 0%, #fa99af 100%);
+  --bg-gradient-banner: linear-gradient(135deg, #a8dadc, #f1faee);
+  --bg-white-trans: rgba(255, 255, 255, 0.85);
+  
+  /* Fonts */
+  --font-heading: 'DynaPuff', system-ui, sans-serif;
+  --font-body: 'Spline Sans', sans-serif;
+  
+  /* Shadows */
+  --shadow-light: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-medium: 0 10px 25px rgba(0, 0, 0, 0.1);
+  --shadow-card-fun: 20px 20px 40px -5px rgba(245, 1, 1, 0.15);
+  
+  /* Transitions */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 15px;
+  --radius-lg: 30px;
+  --radius-full: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-body);
+  color: var(--text-dark);
+  background-color: #faf8f5;
+  scroll-behavior: smooth;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--accent);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition-smooth);
+}
+
+button {
+  font-family: var(--font-body);
+  border: none;
+  outline: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s forwards ease-out;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-hover);
+}
