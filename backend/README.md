@@ -11,11 +11,11 @@
 **En-Joy Psicopedagogía API** es una solución backend construida bajo la arquitectura RESTful en Node.js, Express y MongoDB (Mongoose), aplicando el patrón de **Separación de Responsabilidades** a través de una **Capa de Servicios (`services/`)**. 
 
 El sistema provee una plataforma segura y escalable para:
-1. **Autenticación y Autorización:** Registro, inicio de sesión seguro con contraseñas encriptadas mediante `bcrypt` (en pre-save hooks) y generación/validación de `JSON Web Tokens (JWT)`.
+1. **Autenticación y Autorización:** Registro público (rol `paciente` forzado por seguridad), inicio de sesión seguro con contraseñas encriptadas mediante `bcrypt` (en pre-save hooks) y generación/validación de `JSON Web Tokens (JWT)`.
 2. **Gestión de Servicios Psicoterapéuticos:** CRUD completo para catálogo de prestaciones clínicas.
 3. **Gestión de Turnos y Agenda de Consultas:** CRUD completo con relaciones referenciadas entre pacientes y servicios utilizando `.populate()` de Mongoose.
 4. **Integración con Formulario Web:** Endpoint especializado para recepcionar solicitudes de admisión y turnos directamente desde el frontend institucional de En-Joy Psicopedagogía.
-5. **Compatibilidad con Enunciado Base:** Modelos y rutas para `Productos` y `Categorías` con relaciones referenciadas.
+5. **Compatibilidad con Enunciado Base:** Modelos, servicios, controladores y rutas para `Productos` y `Categorías` con relaciones referenciadas mediante ObjectId y `populate`.
 
 ---
 
@@ -112,21 +112,27 @@ erDiagram
 
 ### Paso 1: Clonar o situarse en el repositorio
 ```bash
-git clone <URL_DEL_REPOSITORIO>
-cd "Tp Desarrollo web UTN/backend"
+git clone https://github.com/JanoND2499/Sitio-Web-Psicopedagogia-JR.git
+cd "Sitio-Web-Psicopedagogia-JR"
 ```
 
-### Paso 2: Instalar las dependencias
+### Paso 2: Instalar las dependencias del backend
+Desde la raíz del proyecto:
 ```bash
+npm --prefix backend install
+```
+O ingresando al directorio `backend`:
+```bash
+cd backend
 npm install
 ```
 
 ### Paso 3: Configurar variables de entorno
-Cree su archivo `.env` a partir del archivo de ejemplo provisto:
+Cree su archivo `.env` dentro de la carpeta `backend` a partir de la plantilla:
 ```bash
 cp .env.example .env
 ```
-Asegúrese de que los valores en `.env` coincidan con su entorno:
+Asegúrese de configurar los valores obligatorios en `backend/.env`:
 ```env
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/enjoy_psicopedagogia
@@ -134,15 +140,20 @@ JWT_SECRET=super_secret_jwt_key_utn_enjoy_2026
 JWT_EXPIRES_IN=24h
 NODE_ENV=development
 ```
+> **Nota de Seguridad:** La aplicación valida en el arranque la presencia obligatoria de `JWT_SECRET` y `MONGO_URI`. Si falta alguna de ellas, detiene la ejecución informando el error para evitar iniciar en modo inseguro.
 
 ### Paso 4: Poblar la base de datos con datos de prueba (Seed Mock)
-Ejecute el comando de sembrado para cargar automáticamente usuarios (con contraseñas ya hasheadas), servicios y turnos referenciados:
+Ejecute el script de sembrado para cargar automáticamente usuarios (con contraseñas ya hasheadas), servicios y turnos referenciados:
 ```bash
+# Desde la carpeta backend:
 npm run seed
+
+# O desde la raíz del proyecto:
+npm run backend:seed
 ```
 
 ### Paso 5: Iniciar el servidor
-- **Modo Desarrollo (con auto-reload con nodemon):**
+- **Modo Desarrollo (con recarga automática mediante nodemon):**
   ```bash
   npm run dev
   ```
@@ -150,58 +161,71 @@ npm run seed
   ```bash
   npm start
   ```
-El servidor quedará disponible en: `http://localhost:5000`.
+El servidor backend quedará disponible en: `http://localhost:5000`.
 
 ---
 
 ## 7. Listado Completo de Endpoints Disponibles
 
 ### Autenticación y Usuarios (`/api/usuarios` o `/api/users`)
-| Método | Endpoint | Acceso / Seguridad | Descripción |
+| Método | Endpoint | Acceso / Header Requerido | Descripción |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/usuarios/register` | Público | Registra un usuario y retorna su token JWT |
-| `POST` | `/api/usuarios/login` | Público | Inicia sesión verificando credenciales y emitiendo JWT |
-| `GET` | `/api/usuarios` | Protegido (Bearer Token) | Lista todos los usuarios registrados |
-| `GET` | `/api/usuarios/:id` | Protegido (Bearer Token) | Obtiene el detalle de un usuario por su ID |
-| `PUT` | `/api/usuarios/:id` | Protegido (Bearer Token) | Actualiza datos de un usuario |
-| `DELETE` | `/api/usuarios/:id` | Protegido (Admin Token) | Elimina un usuario por su ID |
+| `POST` | `/api/usuarios/register` | Público | Registra usuario (asigna rol `paciente` por defecto) y retorna JWT |
+| `POST` | `/api/usuarios/login` | Público | Inicia sesión verificando credenciales con bcrypt y emite JWT |
+| `GET` | `/api/usuarios` | Protegido (`verifyToken`, `verifyAdmin`) | Lista todos los usuarios registrados (exclusivo admin) |
+| `GET` | `/api/usuarios/:id` | Protegido (`verifyToken`) | Obtiene detalle de un usuario por ID |
+| `PUT` | `/api/usuarios/:id` | Protegido (`verifyToken`) | Actualiza datos (usuario propio o admin; solo admin cambia rol) |
+| `DELETE` | `/api/usuarios/:id` | Protegido (`verifyToken`) | Elimina cuenta (propia o por admin) |
 
 ### Catálogo de Servicios (`/api/servicios` o `/api/services`)
-| Método | Endpoint | Acceso / Seguridad | Descripción |
+| Método | Endpoint | Acceso / Header Requerido | Descripción |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/servicios` | Público | Lista todos los servicios (soporta `?activo=true&search=...`) |
+| `GET` | `/api/servicios` | Público | Lista todos los servicios (`?activo=true&search=...`) |
 | `GET` | `/api/servicios/:id` | Público | Obtiene el detalle de un servicio por su ID |
-| `POST` | `/api/servicios` | Protegido (Bearer Token) | Crea un nuevo servicio terapéutico |
-| `PUT` | `/api/servicios/:id` | Protegido (Bearer Token) | Actualiza precio, duración o datos de un servicio |
-| `DELETE` | `/api/servicios/:id` | Protegido (Bearer Token) | Elimina un servicio |
+| `POST` | `/api/servicios` | Protegido (`Authorization: Bearer <token>`) | Crea un nuevo servicio clínico |
+| `PUT` | `/api/servicios/:id` | Protegido (`Authorization: Bearer <token>`) | Actualiza precio, duración o estado de un servicio |
+| `DELETE` | `/api/servicios/:id` | Protegido (`Authorization: Bearer <token>`) | Elimina un servicio |
 
 ### Gestión de Turnos (`/api/turnos`)
-| Método | Endpoint | Acceso / Seguridad | Descripción |
+| Método | Endpoint | Acceso / Header Requerido | Descripción |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/turnos/solicitar` | Público (Front Web) | Crea/vincula paciente y agenda turno desde la web |
-| `GET` | `/api/turnos` | Protegido (Bearer Token) | Lista todos los turnos con `.populate('pacienteId', 'servicioId')` |
-| `GET` | `/api/turnos/:id` | Protegido (Bearer Token) | Obtiene un turno por ID con sus datos referenciados |
-| `POST` | `/api/turnos` | Protegido (Bearer Token) | Crea un turno vinculando `pacienteId` y `servicioId` |
-| `PUT` | `/api/turnos/:id` | Protegido (Bearer Token) | Actualiza estado (ej. de 'pendiente' a 'confirmado') |
-| `DELETE` | `/api/turnos/:id` | Protegido (Bearer Token) | Cancela / elimina un turno |
+| `POST` | `/api/turnos/solicitar` | Público (Frontend Web) | Crea/vincula paciente y agenda turno desde el formulario web |
+| `GET` | `/api/turnos` | Protegido (`Authorization: Bearer <token>`) | Lista turnos con `.populate('pacienteId', 'servicioId')` |
+| `GET` | `/api/turnos/:id` | Protegido (`Authorization: Bearer <token>`) | Obtiene un turno por ID con sus datos referenciados |
+| `POST` | `/api/turnos` | Protegido (`Authorization: Bearer <token>`) | Crea un turno vinculando `pacienteId` y `servicioId` |
+| `PUT` | `/api/turnos/:id` | Protegido (`Authorization: Bearer <token>`) | Actualiza turno (ej. de 'pendiente' a 'confirmado') |
+| `DELETE` | `/api/turnos/:id` | Protegido (`Authorization: Bearer <token>`) | Cancela / elimina un turno |
 
 ### Productos y Categorías (Enunciado Clásico: `/api/productos`, `/api/categorias`)
-| Método | Endpoint | Acceso | Descripción |
+| Método | Endpoint | Acceso / Header Requerido | Descripción |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/categorias` | Público | Lista todas las categorías |
-| `POST` | `/api/categorias` | Protegido | Crea una categoría |
-| `DELETE` | `/api/categorias/:id` | Protegido | Elimina una categoría |
+| `GET` | `/api/categorias/:id` | Público | Detalle de una categoría por ID |
+| `POST` | `/api/categorias` | Protegido (`Authorization: Bearer <token>`) | Crea una categoría |
+| `PUT` | `/api/categorias/:id` | Protegido (`Authorization: Bearer <token>`) | Actualiza una categoría |
+| `DELETE` | `/api/categorias/:id` | Protegido (`Authorization: Bearer <token>`) | Elimina una categoría |
 | `GET` | `/api/productos` | Público | Lista productos con `.populate('categoria')` |
 | `GET` | `/api/productos/:id` | Público | Detalle de un producto con categoría poblada |
-| `POST` | `/api/productos` | Protegido | Crea un producto validando su categoría |
-| `PUT` | `/api/productos/:id` | Protegido | Actualiza un producto |
-| `DELETE` | `/api/productos/:id` | Protegido | Elimina un producto |
+| `POST` | `/api/productos` | Protegido (`Authorization: Bearer <token>`) | Crea un producto validando su categoría |
+| `PUT` | `/api/productos/:id` | Protegido (`Authorization: Bearer <token>`) | Actualiza un producto |
+| `DELETE` | `/api/productos/:id` | Protegido (`Authorization: Bearer <token>`) | Elimina un producto |
 
 ---
 
 ## 8. Ejemplos de Datos Mock (Formato JSON) para Todas las Solicitudes
 
-### 1. Registro de Usuario (`POST /api/usuarios/register`)
+### Formato del Header de Autorización
+Para todas las rutas protegidas, incluir en la cabecera HTTP:
+```http
+Authorization: Bearer <token_jwt_aqui>
+```
+
+---
+
+### A. Autenticación y Usuarios
+
+#### 1. Registro de Usuario (`POST /api/usuarios/register`)
+> **Seguridad:** El backend siempre fuerza `rol: 'paciente'` ignorando cualquier rol que se intente enviar en el body.
 **Request:**
 ```json
 {
@@ -210,8 +234,7 @@ El servidor quedará disponible en: `http://localhost:5000`.
   "password": "Password123!",
   "telNumber": "+543364556677",
   "fechaNacimiento": "1992-07-15",
-  "genero": "f",
-  "rol": "paciente"
+  "genero": "f"
 }
 ```
 **Response (201 Created):**
@@ -235,7 +258,7 @@ El servidor quedará disponible en: `http://localhost:5000`.
 }
 ```
 
-### 2. Inicio de Sesión / Login (`POST /api/usuarios/login`)
+#### 2. Inicio de Sesión / Login (`POST /api/usuarios/login`)
 **Request:**
 ```json
 {
@@ -260,8 +283,30 @@ El servidor quedará disponible en: `http://localhost:5000`.
 }
 ```
 
-### 3. Crear Servicio (`POST /api/servicios`) — Requiere Token en Header
-**Header:** `Authorization: Bearer <token>`  
+---
+
+### B. CRUD de Servicios
+
+#### 1. Obtener Servicios (`GET /api/servicios`)
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "count": 1,
+  "data": [
+    {
+      "_id": "60d5ed291f3c882b548b4571",
+      "nombre": "Estimulación Cognitiva",
+      "descripcion": "Ejercicios de estimulación cognitiva matemática y razonamiento lógico lúdico.",
+      "duracionMinutos": 45,
+      "precio": 8500,
+      "activo": true
+    }
+  ]
+}
+```
+
+#### 2. Crear Servicio (`POST /api/servicios`) — Header: `Authorization: Bearer <token>`
 **Request:**
 ```json
 {
@@ -283,14 +328,87 @@ El servidor quedará disponible en: `http://localhost:5000`.
     "descripcion": "Batería de pruebas neuropsicológicas y de aprendizaje.",
     "duracionMinutos": 60,
     "precio": 12000,
-    "activo": true,
-    "createdAt": "2026-10-31T12:10:00.000Z"
+    "activo": true
   }
 }
 ```
 
-### 4. Consultar Turnos con Populate (`GET /api/turnos`) — Requiere Token
-**Header:** `Authorization: Bearer <token>`  
+#### 3. Actualizar Servicio (`PUT /api/servicios/:id`) — Header: `Authorization: Bearer <token>`
+**Request:**
+```json
+{
+  "precio": 13500,
+  "activo": true
+}
+```
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Servicio actualizado exitosamente",
+  "data": {
+    "_id": "6724b1112233445566778899",
+    "nombre": "Evaluación Psicopedagógica Integral",
+    "precio": 13500,
+    "duracionMinutos": 60,
+    "activo": true
+  }
+}
+```
+
+#### 4. Eliminar Servicio (`DELETE /api/servicios/:id`) — Header: `Authorization: Bearer <token>`
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Servicio eliminado exitosamente",
+  "id": "6724b1112233445566778899"
+}
+```
+
+---
+
+### C. CRUD de Turnos (Relación con Paciente y Servicio via `populate`)
+
+#### 1. Crear Turno vinculando IDs (`POST /api/turnos`) — Header: `Authorization: Bearer <token>`
+**Request:**
+```json
+{
+  "pacienteId": "60d5ec481f3c882b548b4562",
+  "servicioId": "60d5ed291f3c882b548b4571",
+  "fechaHora": "2026-11-15T16:00:00.000Z",
+  "motivoConsulta": "Desafíos en el cálculo matemático y razonamiento lógico",
+  "comentarios": "Segunda sesión diagnóstica"
+}
+```
+**Response (201 Created con Populate):**
+```json
+{
+  "success": true,
+  "message": "Turno creado exitosamente",
+  "data": {
+    "_id": "6724c9988776655443322155",
+    "fechaHora": "2026-11-15T16:00:00.000Z",
+    "estado": "pendiente",
+    "motivoConsulta": "Desafíos en el cálculo matemático y razonamiento lógico",
+    "comentarios": "Segunda sesión diagnóstica",
+    "pacienteId": {
+      "_id": "60d5ec481f3c882b548b4562",
+      "nombre": "Martín Pérez",
+      "email": "martinperez@gmail.com",
+      "telNumber": "+543364112233"
+    },
+    "servicioId": {
+      "_id": "60d5ed291f3c882b548b4571",
+      "nombre": "Estimulación Cognitiva",
+      "precio": 8500,
+      "duracionMinutos": 45
+    }
+  }
+}
+```
+
+#### 2. Consultar Turnos con Populate (`GET /api/turnos`) — Header: `Authorization: Bearer <token>`
 **Response (200 OK):**
 ```json
 {
@@ -324,39 +442,253 @@ El servidor quedará disponible en: `http://localhost:5000`.
 }
 ```
 
-### 5. Enviar Solicitud de Turno desde el Frontend (`POST /api/turnos/solicitar`)
+#### 3. Actualizar Turno (`PUT /api/turnos/:id`) — Header: `Authorization: Bearer <token>`
 **Request:**
 ```json
 {
-  "nombre": "Lucas Morales",
-  "email": "lucas.morales@gmail.com",
-  "telNumber": "+543364778899",
-  "date": "2017-04-10",
-  "genero": "m",
-  "motivoConsulta": "Problemas de concentración y atención en clase",
-  "comentarios": "Derivado por el equipo directivo del colegio."
+  "estado": "confirmado",
+  "comentarios": "Turno confirmado telefónicamente con la madre"
+}
+```
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Turno actualizado exitosamente",
+  "data": {
+    "_id": "60d5ee111f3c882b548b4581",
+    "estado": "confirmado",
+    "comentarios": "Turno confirmado telefónicamente con la madre",
+    "pacienteId": {
+      "_id": "60d5ec481f3c882b548b4562",
+      "nombre": "Martín Pérez"
+    },
+    "servicioId": {
+      "_id": "60d5ed291f3c882b548b4571",
+      "nombre": "Estimulación Cognitiva"
+    }
+  }
+}
+```
+
+#### 4. Eliminar / Cancelar Turno (`DELETE /api/turnos/:id`) — Header: `Authorization: Bearer <token>`
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Turno eliminado exitosamente",
+  "id": "60d5ee111f3c882b548b4581"
+}
+```
+
+---
+
+### D. CRUD de Categorías
+
+#### 1. Obtener Categorías (`GET /api/categorias`)
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "count": 1,
+  "data": [
+    {
+      "_id": "6724d1112233445566778801",
+      "nombre": "Material Didáctico",
+      "descripcion": "Juegos didácticos para psicopedagogía"
+    }
+  ]
+}
+```
+
+#### 2. Crear Categoría (`POST /api/categorias`) — Header: `Authorization: Bearer <token>`
+**Request:**
+```json
+{
+  "nombre": "Evaluación Diagnóstica",
+  "descripcion": "Instrumentos estandarizados de diagnóstico clínico"
 }
 ```
 **Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Solicitud de turno enviada y registrada con éxito",
+  "message": "Categoría creada exitosamente",
   "data": {
-    "_id": "6724c9988776655443322110",
-    "estado": "pendiente",
-    "motivoConsulta": "Problemas de concentración y atención en clase",
-    "pacienteId": {
-      "_id": "6724c9988776655443322109",
-      "nombre": "Lucas Morales",
-      "email": "lucas.morales@gmail.com"
-    },
-    "servicioId": {
-      "_id": "60d5ed291f3c882b548b4571",
-      "nombre": "Consulta Psicopedagógica Inicial",
-      "precio": 8500
+    "_id": "6724d1112233445566778802",
+    "nombre": "Evaluación Diagnóstica",
+    "descripcion": "Instrumentos estandarizados de diagnóstico clínico"
+  }
+}
+```
+
+#### 3. Actualizar Categoría (`PUT /api/categorias/:id`) — Header: `Authorization: Bearer <token>`
+**Request:**
+```json
+{
+  "descripcion": "Protocolos actualizados para evaluación escolar"
+}
+```
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Categoría actualizada exitosamente",
+  "data": {
+    "_id": "6724d1112233445566778802",
+    "nombre": "Evaluación Diagnóstica",
+    "descripcion": "Protocolos actualizados para evaluación escolar"
+  }
+}
+```
+
+#### 4. Eliminar Categoría (`DELETE /api/categorias/:id`) — Header: `Authorization: Bearer <token>`
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Categoría eliminada exitosamente",
+  "id": "6724d1112233445566778802"
+}
+```
+
+---
+
+### E. CRUD de Productos (con referencia y `populate` de Categoría)
+
+#### 1. Crear Producto (`POST /api/productos`) — Header: `Authorization: Bearer <token>`
+**Request:**
+```json
+{
+  "nombre": "Kit de Memotest Emocional",
+  "descripcion": "Juego de cartas para expresión de emociones en sesión",
+  "precio": 5200,
+  "stock": 20,
+  "categoria": "6724d1112233445566778801"
+}
+```
+**Response (201 Created con Populate):**
+```json
+{
+  "success": true,
+  "message": "Producto creado exitosamente",
+  "data": {
+    "_id": "6724e1112233445566778803",
+    "nombre": "Kit de Memotest Emocional",
+    "descripcion": "Juego de cartas para expresión de emociones en sesión",
+    "precio": 5200,
+    "stock": 20,
+    "categoria": {
+      "_id": "6724d1112233445566778801",
+      "nombre": "Material Didáctico",
+      "descripcion": "Juegos didácticos para psicopedagogía"
     }
   }
+}
+```
+
+#### 2. Obtener Productos con Populate (`GET /api/productos`)
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "count": 1,
+  "data": [
+    {
+      "_id": "6724e1112233445566778803",
+      "nombre": "Kit de Memotest Emocional",
+      "descripcion": "Juego de cartas para expresión de emociones en sesión",
+      "precio": 5200,
+      "stock": 20,
+      "categoria": {
+        "_id": "6724d1112233445566778801",
+        "nombre": "Material Didáctico",
+        "descripcion": "Juegos didácticos para psicopedagogía"
+      }
+    }
+  ]
+}
+```
+
+#### 3. Actualizar Producto (`PUT /api/productos/:id`) — Header: `Authorization: Bearer <token>`
+**Request:**
+```json
+{
+  "precio": 5600,
+  "stock": 18
+}
+```
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Producto actualizado exitosamente",
+  "data": {
+    "_id": "6724e1112233445566778803",
+    "nombre": "Kit de Memotest Emocional",
+    "precio": 5600,
+    "stock": 18,
+    "categoria": {
+      "_id": "6724d1112233445566778801",
+      "nombre": "Material Didáctico"
+    }
+  }
+}
+```
+
+#### 4. Eliminar Producto (`DELETE /api/productos/:id`) — Header: `Authorization: Bearer <token>`
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Producto eliminado exitosamente",
+  "id": "6724e1112233445566778803"
+}
+```
+
+---
+
+### F. Manejo Estándar de Errores y Códigos HTTP
+
+La API implementa respuestas de error normalizadas en formato JSON:
+
+#### Error 400 Bad Request (Parámetro faltante o ID con formato inválido)
+```json
+{
+  "success": false,
+  "message": "El formato del ID 'id-invalido-123' no es válido"
+}
+```
+
+#### Error 401 Unauthorized (Sin token o token expirado)
+```json
+{
+  "success": false,
+  "message": "Acceso no autorizado: No se proporcionó un token o el formato es inválido (Bearer <token>)"
+}
+```
+
+#### Error 403 Forbidden (Permisos insuficientes)
+```json
+{
+  "success": false,
+  "message": "Acceso denegado: Se requieren permisos de Administrador."
+}
+```
+
+#### Error 404 Not Found (Recurso no encontrado)
+```json
+{
+  "success": false,
+  "message": "Servicio con id '60d5ed291f3c882b548b9999' no encontrado"
+}
+```
+
+#### Error 500 Internal Server Error (Falta de variable obligatoria o error no controlado)
+```json
+{
+  "success": false,
+  "message": "Error de configuración del servidor: JWT_SECRET no está configurada"
 }
 ```
 
@@ -365,16 +697,18 @@ El servidor quedará disponible en: `http://localhost:5000`.
 ## 9. Funcionalidades Implementadas y a Futuro
 
 ### Funcionalidades Implementadas
-- [x] Arquitectura en tres capas: Rutas $\rightarrow$ Controladores $\rightarrow$ Capa de Servicios $\rightarrow$ Modelos Mongoose.
+- [x] Arquitectura en capas estrictas: Rutas $\rightarrow$ Controladores $\rightarrow$ Capa de Servicios $\rightarrow$ Modelos Mongoose.
 - [x] CRUD completo para Servicios, Turnos, Usuarios, Productos y Categorías.
 - [x] Hash seguro de contraseñas mediante `bcrypt` en hook pre-save de Mongoose.
+- [x] Registro seguro de usuarios forzando rol `paciente` y restringiendo la edición de roles a administradores.
 - [x] Autenticación mediante tokens JWT y middleware `verifyToken`.
 - [x] Middleware `verifyAdmin` para operaciones privilegiadas.
 - [x] Relaciones con integridad referencial y resolución de datos mediante `.populate()`.
+- [x] Validación de formato de ObjectIds en todos los servicios (evita caídas 500 por CastError).
 - [x] Manejo uniforme de respuestas HTTP con códigos apropiados (200, 201, 400, 401, 403, 404, 500) y manejo de excepciones mediante `try/catch`.
 - [x] Habilitación de CORS para consumo directo desde SPA en React (Vite).
 - [x] Script de sembrado inicial (`npm run seed`) con datos de prueba realistas.
-- [x] Variables de entorno centralizadas vía `dotenv`.
+- [x] Validación estricta en el arranque de variables obligatorias (`JWT_SECRET` y `MONGO_URI`).
 
 ### Funcionalidades a Futuro
 - [ ] Recordatorios automatizados por correo electrónico (Nodemailer) y WhatsApp para turnos confirmados.
@@ -386,7 +720,7 @@ El servidor quedará disponible en: `http://localhost:5000`.
 
 ## 10. Archivo .env
 
-Se provee un archivo `.env` configurado para pruebas locales inmediatas y un archivo `.env.example` con las variables requeridas:
+Se provee una plantilla `backend/.env.example` con los parámetros necesarios:
 
 ```env
 PORT=5000
@@ -395,4 +729,3 @@ JWT_SECRET=super_secret_jwt_key_utn_enjoy_2026
 JWT_EXPIRES_IN=24h
 NODE_ENV=development
 ```
-

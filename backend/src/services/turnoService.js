@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Turno = require('../models/turnoModel');
 const User = require('../models/userModel');
 const Service = require('../models/serviceModel');
@@ -12,9 +13,19 @@ class TurnoService {
       filter.estado = query.estado;
     }
     if (query.pacienteId) {
+      if (!mongoose.Types.ObjectId.isValid(query.pacienteId)) {
+        const error = new Error(`El formato del pacienteId '${query.pacienteId}' no es válido`);
+        error.statusCode = 400;
+        throw error;
+      }
       filter.pacienteId = query.pacienteId;
     }
     if (query.servicioId) {
+      if (!mongoose.Types.ObjectId.isValid(query.servicioId)) {
+        const error = new Error(`El formato del servicioId '${query.servicioId}' no es válido`);
+        error.statusCode = 400;
+        throw error;
+      }
       filter.servicioId = query.servicioId;
     }
 
@@ -28,6 +39,12 @@ class TurnoService {
    * Obtener un turno específico por ID con populate
    */
   async getById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      const error = new Error(`El formato del ID '${id}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
     const turno = await Turno.findById(id)
       .populate('pacienteId', 'nombre email telNumber fechaNacimiento genero')
       .populate('servicioId', 'nombre descripcion duracionMinutos precio activo');
@@ -44,11 +61,29 @@ class TurnoService {
    * Crear un nuevo turno verificando existencia de relaciones
    */
   async create(turnoData) {
+    if (!turnoData.pacienteId || !turnoData.servicioId || !turnoData.fechaHora || !turnoData.motivoConsulta) {
+      const error = new Error('pacienteId, servicioId, fechaHora y motivoConsulta son obligatorios');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(turnoData.pacienteId)) {
+      const error = new Error(`El formato del ID de paciente '${turnoData.pacienteId}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(turnoData.servicioId)) {
+      const error = new Error(`El formato del ID de servicio '${turnoData.servicioId}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
     // Verificar que el paciente exista
     const paciente = await User.findById(turnoData.pacienteId);
     if (!paciente) {
       const error = new Error(`El paciente con ID '${turnoData.pacienteId}' no existe`);
-      error.statusCode = 400;
+      error.statusCode = 404;
       throw error;
     }
 
@@ -56,7 +91,7 @@ class TurnoService {
     const servicio = await Service.findById(turnoData.servicioId);
     if (!servicio) {
       const error = new Error(`El servicio con ID '${turnoData.servicioId}' no existe`);
-      error.statusCode = 400;
+      error.statusCode = 404;
       throw error;
     }
 
@@ -97,6 +132,12 @@ class TurnoService {
 
     // 2. Determinar el servicio (si no se especifica, toma el primero activo)
     let servicioTargetId = servicioId;
+    if (servicioTargetId && !mongoose.Types.ObjectId.isValid(servicioTargetId)) {
+      const error = new Error(`El formato del servicioId '${servicioTargetId}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
     if (!servicioTargetId) {
       const primerServicio = await Service.findOne({ activo: true });
       if (primerServicio) {
@@ -133,6 +174,24 @@ class TurnoService {
    * Actualizar turno por ID
    */
   async update(id, updateData) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      const error = new Error(`El formato del ID '${id}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (updateData.pacienteId && !mongoose.Types.ObjectId.isValid(updateData.pacienteId)) {
+      const error = new Error(`El formato del ID de paciente '${updateData.pacienteId}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (updateData.servicioId && !mongoose.Types.ObjectId.isValid(updateData.servicioId)) {
+      const error = new Error(`El formato del ID de servicio '${updateData.servicioId}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
     const turno = await Turno.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
@@ -152,6 +211,12 @@ class TurnoService {
    * Eliminar turno por ID
    */
   async delete(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      const error = new Error(`El formato del ID '${id}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
     const turno = await Turno.findByIdAndDelete(id);
     if (!turno) {
       const error = new Error(`Turno con id '${id}' no encontrado`);
@@ -163,4 +228,3 @@ class TurnoService {
 }
 
 module.exports = new TurnoService();
-

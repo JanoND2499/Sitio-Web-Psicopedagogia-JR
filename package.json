@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "backend": "npm --prefix backend run dev",
     "backend:start": "npm --prefix backend start",
-    "backend:seed": "npm --prefix backend run seed"
+    "backend:seed": "npm --prefix backend run seed",
+    "backend:test": "npm --prefix backend test"
   },
   "dependencies": {
     "prop-types": "^15.8.1",

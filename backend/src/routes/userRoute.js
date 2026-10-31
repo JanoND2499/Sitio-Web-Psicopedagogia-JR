@@ -8,10 +8,10 @@ router.post('/register', userController.register);
 router.post('/login', userController.login);
 
 // Rutas protegidas por JWT
-router.get('/', verifyToken, userController.getAll);
+router.get('/', verifyToken, verifyAdmin, userController.getAll);
 router.get('/:id', verifyToken, userController.getById);
 router.put('/:id', verifyToken, userController.update);
-router.delete('/:id', verifyToken, verifyAdmin, userController.delete);
+router.delete('/:id', verifyToken, userController.delete);
 
 module.exports = router;
 

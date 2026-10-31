@@ -1,8 +1,21 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Validación de variables de entorno críticas y obligatorias
+const requiredEnvVars = ['JWT_SECRET', 'MONGO_URI'];
+const missingVars = requiredEnvVars.filter((key) => !process.env[key]);
+if (missingVars.length > 0) {
+  console.error(`[Error Fatal de Configuración] Faltan variables de entorno obligatorias: ${missingVars.join(', ')}`);
+  console.error('Por favor configure estas variables en su archivo .env antes de iniciar la aplicación.');
+  if (process.env.NODE_ENV !== 'test') {
+    process.exit(1);
+  }
+}
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 const connectDB = require('./src/config/db');
 
 // Importación de rutas
@@ -14,8 +27,10 @@ const categoryRoute = require('./src/routes/categoryRoute');
 
 const app = express();
 
-// Conexión a la base de datos MongoDB
-connectDB();
+// Conexión a la base de datos MongoDB (solo si no hay una conexión activa previa)
+if (mongoose.connection.readyState === 0) {
+  connectDB();
+}
 
 // Middlewares globales
 app.use(cors()); // Habilita CORS para permitir peticiones del cliente React

@@ -66,7 +66,7 @@ class UserController {
 
   async update(req, res) {
     try {
-      const updatedUser = await userService.update(req.params.id, req.body);
+      const updatedUser = await userService.update(req.params.id, req.body, req.user);
       return res.status(200).json({
         success: true,
         message: 'Usuario actualizado exitosamente',
@@ -82,7 +82,7 @@ class UserController {
 
   async delete(req, res) {
     try {
-      const result = await userService.delete(req.params.id);
+      const result = await userService.delete(req.params.id, req.user);
       return res.status(200).json({
         success: true,
         message: result.message,

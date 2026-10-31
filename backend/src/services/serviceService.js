@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Service = require('../models/serviceModel');
 
 class ServiceService {
@@ -19,6 +20,12 @@ class ServiceService {
    * Obtener un servicio por ID
    */
   async getById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      const error = new Error(`El formato del ID '${id}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
     const service = await Service.findById(id);
     if (!service) {
       const error = new Error(`Servicio con id '${id}' no encontrado`);
@@ -39,6 +46,12 @@ class ServiceService {
    * Actualizar un servicio por ID
    */
   async update(id, updateData) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      const error = new Error(`El formato del ID '${id}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
     const service = await Service.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
@@ -55,6 +68,12 @@ class ServiceService {
    * Eliminar un servicio por ID
    */
   async delete(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      const error = new Error(`El formato del ID '${id}' no es válido`);
+      error.statusCode = 400;
+      throw error;
+    }
+
     const service = await Service.findByIdAndDelete(id);
     if (!service) {
       const error = new Error(`Servicio con id '${id}' no encontrado`);
@@ -66,4 +85,3 @@ class ServiceService {
 }
 
 module.exports = new ServiceService();
-
