@@ -136,7 +136,7 @@ Asegúrese de configurar los valores obligatorios en `backend/.env`:
 ```env
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/enjoy_psicopedagogia
-JWT_SECRET=super_secret_jwt_key_utn_enjoy_2026
+JWT_SECRET=REEMPLAZAR_POR_UNA_CLAVE_SEGURA
 JWT_EXPIRES_IN=24h
 NODE_ENV=development
 ```
@@ -725,7 +725,7 @@ Se provee una plantilla `backend/.env.example` con los parámetros necesarios:
 ```env
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/enjoy_psicopedagogia
-JWT_SECRET=super_secret_jwt_key_utn_enjoy_2026
+JWT_SECRET=REEMPLAZAR_POR_UNA_CLAVE_SEGURA
 JWT_EXPIRES_IN=24h
 NODE_ENV=development
 ```
