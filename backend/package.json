@@ -1,0 +1,36 @@
+{
+  "name": "enjoy-backend-api",
+  "version": "1.0.0",
+  "description": "API RESTful con CRUD, Capa de Servicios y Autenticación JWT para En-Joy Psicopedagogía - UTN",
+  "main": "app.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "seed": "node src/utils/seed.js"
+  },
+  "keywords": [
+    "express",
+    "mongodb",
+    "mongoose",
+    "rest-api",
+    "jwt",
+    "bcrypt",
+    "utn"
+  ],
+  "author": "Jano Duarte",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
+

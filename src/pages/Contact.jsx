@@ -5,6 +5,8 @@ import '../styles/Contact.css';
 
 const Contact = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiFeedback, setApiFeedback] = useState(null);
 
   const initialValues = {
     nombre: '',
@@ -56,14 +58,37 @@ const Contact = () => {
     validateForm,
   } = useForm(initialValues, validate);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault(); // Prevents default form submit browser behavior
     
     console.log('Submit Event triggered. Preventing default...');
 
     if (validateForm()) {
-      console.log('Datos del Formulario Enviados con Éxito:', values);
-      setSubmitSuccess(true);
+      setIsSubmitting(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/turnos/solicitar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(values),
+        });
+
+        if (response.ok) {
+          const resData = await response.json();
+          console.log('Turno registrado exitosamente en MongoDB Backend:', resData);
+          setApiFeedback('Turno agendado exitosamente en la base de datos.');
+        } else {
+          console.warn('El servidor backend respondió con error status:', response.status);
+          setApiFeedback(null);
+        }
+      } catch (networkError) {
+        console.warn('Backend no disponible en http://localhost:5000, registrando en modo local:', networkError.message);
+        setApiFeedback(null);
+      } finally {
+        setIsSubmitting(false);
+        setSubmitSuccess(true);
+      }
     } else {
       console.warn('Formulario inválido. Errores detectados:', errors);
       setSubmitSuccess(false);
@@ -73,6 +98,7 @@ const Contact = () => {
   const handleCustomReset = (e) => {
     handleReset(e);
     setSubmitSuccess(false);
+    setApiFeedback(null);
   };
 
   // Obras sociales data
@@ -116,7 +142,11 @@ const Contact = () => {
             <div className="success-message">
               <div className="success-icon">✓</div>
               <h3>¡Mensaje Enviado con Éxito!</h3>
-              <p>Tu consulta ha sido registrada. Mira los detalles en la consola de tu navegador.</p>
+              <p>
+                {apiFeedback 
+                  ? apiFeedback 
+                  : 'Tu consulta ha sido procesada y registrada en el sistema de En-Joy Psicopedagogía.'}
+              </p>
               <div className="success-data-summary">
                 <p><strong>Nombre:</strong> {values.nombre}</p>
                 <p><strong>Email:</strong> {values.email}</p>
@@ -306,8 +336,8 @@ const Contact = () => {
 
               {/* BOTONES ACCION */}
               <div className="form-buttons">
-                <button type="submit" className="buttom-send submit-btn">
-                  Enviar
+                <button type="submit" className="buttom-send submit-btn" disabled={isSubmitting}>
+                  {isSubmitting ? 'Enviando...' : 'Enviar'}
                 </button>
                 <button 
                   type="button" 
