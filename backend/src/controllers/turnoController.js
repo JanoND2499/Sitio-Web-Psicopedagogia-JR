@@ -3,7 +3,7 @@ const turnoService = require('../services/turnoService');
 class TurnoController {
   async getAll(req, res) {
     try {
-      const turnos = await turnoService.getAll(req.query);
+      const turnos = await turnoService.getAll(req.query, req.user);
       return res.status(200).json({
         success: true,
         count: turnos.length,
@@ -19,7 +19,7 @@ class TurnoController {
 
   async getById(req, res) {
     try {
-      const turno = await turnoService.getById(req.params.id);
+      const turno = await turnoService.getById(req.params.id, req.user);
       return res.status(200).json({
         success: true,
         data: turno,
@@ -34,7 +34,7 @@ class TurnoController {
 
   async create(req, res) {
     try {
-      const newTurno = await turnoService.create(req.body);
+      const newTurno = await turnoService.create(req.body, req.user);
       return res.status(201).json({
         success: true,
         message: 'Turno creado exitosamente',
@@ -49,7 +49,7 @@ class TurnoController {
   }
 
   /**
-   * Endpoint público para recibir reservas desde el formulario de contacto del Frontend
+   * Endpoint público para recibir solicitudes desde el formulario de contacto del Frontend
    */
   async createFromContact(req, res) {
     try {
@@ -69,7 +69,7 @@ class TurnoController {
 
   async update(req, res) {
     try {
-      const updatedTurno = await turnoService.update(req.params.id, req.body);
+      const updatedTurno = await turnoService.update(req.params.id, req.body, req.user);
       return res.status(200).json({
         success: true,
         message: 'Turno actualizado exitosamente',
@@ -83,9 +83,25 @@ class TurnoController {
     }
   }
 
+  async cancelar(req, res) {
+    try {
+      const turnoCancelado = await turnoService.cancelar(req.params.id, req.user);
+      return res.status(200).json({
+        success: true,
+        message: 'Turno cancelado exitosamente',
+        data: turnoCancelado,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message || 'Error al cancelar el turno',
+      });
+    }
+  }
+
   async delete(req, res) {
     try {
-      const result = await turnoService.delete(req.params.id);
+      const result = await turnoService.delete(req.params.id, req.user);
       return res.status(200).json({
         success: true,
         message: result.message,
@@ -101,4 +117,3 @@ class TurnoController {
 }
 
 module.exports = new TurnoController();
-

@@ -163,6 +163,28 @@ npm run backend:seed
   ```
 El servidor backend quedará disponible en: `http://localhost:5000`.
 
+### Paso 6: Ejecutar las pruebas automatizadas (Tests)
+
+La suite de pruebas ejecuta 29 verificaciones funcionales exhaustivas (seguridad, JWT, control de acceso por roles, validación estricta del identificador del paciente, rechazo de llamadas a servicios sin usuario con HTTP 403, rechazo de roles desconocidos con HTTP 403, aislamiento de turnos entre pacientes, operación específica de cancelación con reglas de negocio clínicas, validación de lista blanca y filtrado de operadores de MongoDB, CRUDs, relaciones `populate`, CORS, rechazo de tokens expirados y validación de referencias).
+
+El runner es portable y detecta automáticamente el binario `mongod` o utiliza un servicio activo de MongoDB:
+
+```bash
+# Desde la carpeta backend:
+npm test
+
+# O desde la raíz del proyecto:
+npm run backend:test
+```
+
+> **Protección y Seguridad Estricta de la Base de Datos:**
+> - **Base de datos de pruebas predeterminada:** El runner se conecta por defecto a una base descartable dedicada (`mongodb://127.0.0.1:27019/enjoy_test_db`).
+> - **Filtro estricto de seguridad:** El runner valida de forma obligatoria que el nombre de la base de pruebas sea `enjoy_test_db`, `enjoy_test` o termine estrictamente en `_test` o `_test_db`. Si apunta a la base de datos principal (`enjoy_psicopedagogia`) o a cualquier nombre ajeno/de producción, la ejecución **se aborta de inmediato con código de error**.
+> - **Configuración de `TEST_MONGO_URI` personalizada:** Si se define una URI personalizada mediante la variable de entorno `TEST_MONGO_URI`, esta **debe apuntar exclusivamente a una base de datos de pruebas dedicada y descartable**.
+> - **Protección absoluta contra borrado accidental (`dropDatabase()`):** La operación destructiva `dropDatabase()` se ejecuta **únicamente sobre la instancia efímera y aislada levantada por el propio runner**. Si se detecta una instancia externa o preexistente de MongoDB (por ejemplo, en un clúster o servicio del sistema), la operación de borrado total de la base se **omite automáticamente** para preservar la integridad de los datos.
+> - **Portabilidad:** Si `mongod` se encuentra en una ruta personalizada, puede indicarse mediante `MONGOD_PATH` (ej: `set MONGOD_PATH=...` o `export MONGOD_PATH=...`).
+> - **Salida con código de error:** Ante cualquier falla en los tests o error fatal, el runner evalúa los resultados y garantiza la finalización con `process.exitCode = 1`.
+
 ---
 
 ## 7. Listado Completo de Endpoints Disponibles
@@ -182,33 +204,34 @@ El servidor backend quedará disponible en: `http://localhost:5000`.
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/servicios` | Público | Lista todos los servicios (`?activo=true&search=...`) |
 | `GET` | `/api/servicios/:id` | Público | Obtiene el detalle de un servicio por su ID |
-| `POST` | `/api/servicios` | Protegido (`Authorization: Bearer <token>`) | Crea un nuevo servicio clínico |
-| `PUT` | `/api/servicios/:id` | Protegido (`Authorization: Bearer <token>`) | Actualiza precio, duración o estado de un servicio |
-| `DELETE` | `/api/servicios/:id` | Protegido (`Authorization: Bearer <token>`) | Elimina un servicio |
+| `POST` | `/api/servicios` | Protegido (`verifyToken`, `verifyAdmin`) | Crea un nuevo servicio clínico (exclusivo admin) |
+| `PUT` | `/api/servicios/:id` | Protegido (`verifyToken`, `verifyAdmin`) | Actualiza precio, duración o estado de un servicio (exclusivo admin) |
+| `DELETE` | `/api/servicios/:id` | Protegido (`verifyToken`, `verifyAdmin`) | Elimina un servicio (exclusivo admin) |
 
 ### Gestión de Turnos (`/api/turnos`)
 | Método | Endpoint | Acceso / Header Requerido | Descripción |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/turnos/solicitar` | Público (Frontend Web) | Crea/vincula paciente y agenda turno desde el formulario web |
-| `GET` | `/api/turnos` | Protegido (`Authorization: Bearer <token>`) | Lista turnos con `.populate('pacienteId', 'servicioId')` |
-| `GET` | `/api/turnos/:id` | Protegido (`Authorization: Bearer <token>`) | Obtiene un turno por ID con sus datos referenciados |
-| `POST` | `/api/turnos` | Protegido (`Authorization: Bearer <token>`) | Crea un turno vinculando `pacienteId` y `servicioId` |
-| `PUT` | `/api/turnos/:id` | Protegido (`Authorization: Bearer <token>`) | Actualiza turno (ej. de 'pendiente' a 'confirmado') |
-| `DELETE` | `/api/turnos/:id` | Protegido (`Authorization: Bearer <token>`) | Cancela / elimina un turno |
+| `POST` | `/api/turnos/solicitar` | Público (Frontend Web) | Crea/vincula paciente seguro y registra solicitud pendiente (`fechaHora: null`) para coordinación posterior |
+| `GET` | `/api/turnos` | Protegido (`verifyToken`) | Lista turnos con populate (paciente consulta exclusivamente sus propios turnos; admin consulta todos) |
+| `GET` | `/api/turnos/:id` | Protegido (`verifyToken`) | Detalle de turno con populate (paciente consulta exclusivamente su propio turno; admin consulta cualquiera) |
+| `PATCH` | `/api/turnos/:id/cancelar` | Protegido (`verifyToken`) | Operación limitada: paciente cancela su propio turno sin modificar otros campos (o admin) |
+| `POST` | `/api/turnos` | Protegido (`verifyToken`, `verifyAdmin`) | Agendamiento formal de turno (exclusivo admin) |
+| `PUT` | `/api/turnos/:id` | Protegido (`verifyToken`, `verifyAdmin`) | Actualiza turno con lista blanca y validación de referencias (exclusivo admin) |
+| `DELETE` | `/api/turnos/:id` | Protegido (`verifyToken`, `verifyAdmin`) | Elimina un turno (exclusivo admin) |
 
 ### Productos y Categorías (Enunciado Clásico: `/api/productos`, `/api/categorias`)
 | Método | Endpoint | Acceso / Header Requerido | Descripción |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/categorias` | Público | Lista todas las categorías |
 | `GET` | `/api/categorias/:id` | Público | Detalle de una categoría por ID |
-| `POST` | `/api/categorias` | Protegido (`Authorization: Bearer <token>`) | Crea una categoría |
-| `PUT` | `/api/categorias/:id` | Protegido (`Authorization: Bearer <token>`) | Actualiza una categoría |
-| `DELETE` | `/api/categorias/:id` | Protegido (`Authorization: Bearer <token>`) | Elimina una categoría |
+| `POST` | `/api/categorias` | Protegido (`verifyToken`, `verifyAdmin`) | Crea una categoría (exclusivo admin) |
+| `PUT` | `/api/categorias/:id` | Protegido (`verifyToken`, `verifyAdmin`) | Actualiza una categoría (exclusivo admin) |
+| `DELETE` | `/api/categorias/:id` | Protegido (`verifyToken`, `verifyAdmin`) | Elimina una categoría (exclusivo admin) |
 | `GET` | `/api/productos` | Público | Lista productos con `.populate('categoria')` |
 | `GET` | `/api/productos/:id` | Público | Detalle de un producto con categoría poblada |
-| `POST` | `/api/productos` | Protegido (`Authorization: Bearer <token>`) | Crea un producto validando su categoría |
-| `PUT` | `/api/productos/:id` | Protegido (`Authorization: Bearer <token>`) | Actualiza un producto |
-| `DELETE` | `/api/productos/:id` | Protegido (`Authorization: Bearer <token>`) | Elimina un producto |
+| `POST` | `/api/productos` | Protegido (`verifyToken`, `verifyAdmin`) | Crea un producto validando su categoría (exclusivo admin) |
+| `PUT` | `/api/productos/:id` | Protegido (`verifyToken`, `verifyAdmin`) | Actualiza un producto (exclusivo admin) |
+| `DELETE` | `/api/productos/:id` | Protegido (`verifyToken`, `verifyAdmin`) | Elimina un producto (exclusivo admin) |
 
 ---
 

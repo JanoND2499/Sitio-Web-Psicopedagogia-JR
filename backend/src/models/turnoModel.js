@@ -15,7 +15,7 @@ const turnoSchema = new mongoose.Schema(
     },
     fechaHora: {
       type: Date,
-      required: [true, 'La fecha y hora del turno es obligatoria'],
+      default: null,
     },
     estado: {
       type: String,
